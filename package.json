@@ -1,7 +1,12 @@
 {
   "name": "spas-youtube",
+<<<<<<< HEAD
   "description": "YouTube API desciption for SPAS",
   "version": "0.0.2",
+=======
+  "description": "YouTube API helpers for SPAS",
+  "version": "0.1.0",
+>>>>>>> Update description, version and readme
   "author": {
     "name": "Donovan Buck",
     "email": "donovan@donovan.bz",
@@ -20,12 +25,12 @@
     "youtube"
   ],
   "dependencies": {
-    "request": "2.12.0"
+    "request": "2.x.x",
+    "underscore": "1.x.x"
   },
   "main": "./api.js",
   "engines": {
     "node": ">= 0.8.0"
   },
-  "readme": "# spas-youtube\n\nYouTube API desciption for SPAS\n\n## Installation\n\n### Installing little-spas\n``` bash\n$ [sudo] npm install little-spas\n```\n\n### Installing spas-youtube\n``` bash\n$ [sudo] npm install spas-youtube\n```\n\n## Documentation spas-youtube documentation can be found at http://dtex.github.com/spas-youtube\n\n",
-  "_id": "spas-youtube@0.0.1"
+  "readme": "# spas-youtube\n\nYouTube API helpers for SPAS\n\n## Installation\n\n### Installing little-spas\n``` bash\n$ [sudo] npm install little-spas\n```\n\n### Installing spas-youtube\n``` bash\n$ [sudo] npm install spas-youtube\n```\n\n## Documentation spas-youtube documentation can be found at http://dtex.github.com/spas-youtube\n\n"
 }
