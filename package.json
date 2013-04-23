@@ -1,12 +1,7 @@
 {
   "name": "spas-youtube",
-<<<<<<< HEAD
-  "description": "YouTube API desciption for SPAS",
-  "version": "0.0.2",
-=======
   "description": "YouTube API helpers for SPAS",
   "version": "0.1.0",
->>>>>>> Update description, version and readme
   "author": {
     "name": "Donovan Buck",
     "email": "donovan@donovan.bz",
