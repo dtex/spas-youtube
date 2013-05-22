@@ -12,8 +12,13 @@ exports["custom"] = {
 				
 				var n = videos.feed.entry.length;
 				
+				// If this bundle is using oauth2, add in the access token
+				var tokenString =  _.isObject(credentials) && _.has(credentials, 'access_token') ? 
+					"&access_token=" + credentials.access_token : 
+					'';
+				
 				_.each(videos.feed.entry, function( obj, key) {
-					spashttp.request({url: "http://gdata.youtube.com/feeds/api/videos/" + obj.media$group.yt$videoid.$t + '?v=2&alt=json'}, credentials, function( err, video ) {
+					spashttp.request({url: "http://gdata.youtube.com/feeds/api/videos/" + obj.media$group.yt$videoid.$t + '?v=2&alt=json' + tokenString }, credentials, function( err, video ) {
 						n=n-1;
 						if(_.has(video, 'entry')) {
 							videos.feed.entry[key].media$group.media$keywords.$t = video.entry.media$group.media$keywords.$t;
