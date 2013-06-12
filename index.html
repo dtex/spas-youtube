@@ -6,9 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
     <meta name="description" content="Spas-youtube : YouTube API description for SPAS" />
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="css/stylesheet.css">
 
-    <title>Spas-youtube</title>
+    <title>spas-youtube</title>
   </head>
 
   <body>
@@ -18,50 +18,51 @@
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/dtex/spas-youtube">View on GitHub</a>
 
-          <h1 id="project_title">Spas-youtube</h1>
-          <h2 id="project_tagline">YouTube API description for SPAS</h2>
+          <h1 id="project_title">spas-youtube</h1>
+          <h2 id="project_tagline">YouTube API helpers for spas</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/dtex/spas-youtube/zipball/master">Download this project as a .zip file</a>
               <a class="tar_download_link" href="https://github.com/dtex/spas-youtube/tarball/master">Download this project as a tar.gz file</a>
             </section>
+
         </header>
     </div>
 
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+		<p>spas-youtube offers helpers for the YouTube v2 api. The majority of requests from YouTube can be made using the generic <a href="http://dtex.github.io/spas-http">spas-http</a> request method. If there is a helper you need for YouTube v2 but don't see it here, pull requests are welcome.</p>
+		<h4>videosWithKeywords</h4>
+		<p>Prior to <a href="#">this</a> change in the YouTube API it was possible to retrieve a list of a videos with the tags included in the JSON. I'm not sure why, but they turned that off. You can now only get tags (keywords) if you are authenticated as the owner of the video. Further, the data is only returned when you requests details on an individual video, not when you retrieve a list of videos. videosWithKeywords will retrieve a list of videos and then make an additional request for each video, retrieve the keywords and insert them into the list. You must be authenticated with oauth2 for this to work.</p>
+		<pre><code>var youtube = require("spas-youtube");
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
-
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
-
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
-
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+exports.mySpecialVideos = {
+  youtube: {
+    "resource": youtube.custom.videosWithKeywords,
+    "params": {
+      "url": "http://gdata.youtube.com/feeds/api/videos",
+      "v": "2",
+      "author": "donovan713",
+      "max-results": "50",
+      "alt": "json"
+    },
+    "cacheduration": 3500,
+    "timeout": 1000,
+    "auth": {
+      "type": "oauth2",
+      "provider": "google",
+      "scope": "https://gdata.youtube.com"
+    }
+  }
+}</code></pre>
+		<p>There are some important things to remember when using videosWithKeywords:</p>
+		<ul>
+			<li>Set your <strong>cacheduration</strong> high. We are making a separate request for each video and I imagine the Google overlords will cut you off if you are making too many requests to their API.</li>
+			<li>Set your <strong>timeout</strong> low. It's gonna timeout when your cacheduration has been reached (in this example it's gotta make 51 separate requests) so why make your users wait? Just serve up the cached response and let spas update asynchronously. The next request to spas will get the updated response.</li>
+			<li>Use a <strong>filter</strong>. I'm not using one in this example because I don't want to clutter things up, but you can reduce your bundle a size a lot if you do. <a href="http://dtex.github.io/spas/buildit.html">Read more about filter</a>.</li>
+		</ul>
       </section>
     </div>
 
@@ -77,3 +78,38 @@ $ git checkout gh-pages
 
   </body>
 </html>
+
+
+videosWithKeywords: function(params, credentials, cb) { 
+		
+		params.url = "http://gdata.youtube.com/feeds/api/videos?v=2";
+		
+		spashttp.request(params, credentials, function( err, videos ) {
+			
+			if (_.has(videos, 'feed')) {
+				
+				var n = videos.feed.entry.length;
+				
+				// If this bundle is using oauth2, add in the access token
+				var tokenString =  _.isObject(credentials) && _.has(credentials, 'access_token') ? 
+					"&access_token=" + credentials.access_token : 
+					'';
+				
+				_.each(videos.feed.entry, function( obj, key) {
+					spashttp.request({url: "http://gdata.youtube.com/feeds/api/videos/" + obj.media$group.yt$videoid.$t + '?v=2&alt=json' + tokenString }, credentials, function( err, video ) {
+						n=n-1;
+						if(video && _.has(video, 'entry')) {
+							videos.feed.entry[key].media$group.media$keywords.$t = video.entry.media$group.media$keywords.$t;
+							videos.feed.entry[key].category = video.entry.category;
+						}
+						if (n === 0) {
+							cb( null, videos );
+						}
+					});
+				});
+				
+			} else {
+				cb( err, videos );
+			}
+			
+		});

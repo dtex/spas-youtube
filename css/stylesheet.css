@@ -1,5 +1,5 @@
 /*******************************************************************************
-Slate Theme for GitHub Pages
+Slate Theme for Github Pages
 by Jason Costello, @jsncostello
 *******************************************************************************/
 
@@ -78,14 +78,23 @@ h1 {
   font-weight: 700;
 }
 
+h1 a {
+	color: #fff;
+}
+
 h2 {
   padding-bottom: 10px;
   font-size: 32px;
   background: url('../images/bg_hr.png') repeat-x bottom;
 }
 
+h2 a {
+	color: #fff;
+}
+
 h3 {
   font-size: 24px;
+  clear:left;
 }
 
 h4 {
@@ -147,15 +156,15 @@ img {
   position: relative;
   margin: 0 auto;
   max-width: 739px;
-  padding: 5px;
+  xpadding: 5px;
   margin: 10px 0 10px 0;
   border: 1px solid #ebebeb;
 
-  box-shadow: 0 0 5px #ebebeb;
-  -webkit-box-shadow: 0 0 5px #ebebeb;
-  -moz-box-shadow: 0 0 5px #ebebeb;
-  -o-box-shadow: 0 0 5px #ebebeb;
-  -ms-box-shadow: 0 0 5px #ebebeb;
+  box-shadow: 0 0 10px #666;
+  -webkit-box-shadow: 0 0 10px #666;
+  -moz-box-shadow: 0 0 10px #666;
+  -o-box-shadow: 0 0 10px #666;
+  -ms-box-shadow: 0 0 10px #666;
 }
 
 pre, code {
@@ -229,7 +238,7 @@ dl p {
 
 hr {
   height: 1px;
-  margin-bottom: 5px;
+  margin: 12px 0;
   border: none;
   background: url('../images/bg_hr.png') repeat-x center;
 }
@@ -428,4 +437,35 @@ Small Device Styles
     font-size: 11px;
   }
 
+}
+
+.breadcrumbs ul {
+	list-style-type: none;
+}
+
+.breadcrumbs li {
+	float:left;
+	padding:0 6px 24px 0;
+	list-style-type: none;
+}
+
+navigation ul {
+	margin: 0;
+	padding: 18px 0 32px 0;
+}
+
+navigation ul li {
+
+	list-style-type: none;
+	float: left;
+	padding: 0 24px 0 0;
+	
+}
+
+navigation ul li .active {
+	color: #666;
+}
+
+.clear {
+	clear:both;
 }
