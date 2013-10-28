@@ -33,7 +33,7 @@ exports["custom"] = {
 		// In order to concat the video entries only
 		var data;
 
-		async.concat(startIndices, function (startIndex, callback) {
+		async.concatSeries(startIndices, function (startIndex, callback) {
 			var shadowed = _.clone(params);
 			shadowed['start-index'] = startIndex+'';
 
