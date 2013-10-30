@@ -22,7 +22,8 @@
   "dependencies": {
     "request": "2.x.x",
     "underscore": "1.x.x",
-    "async": "0.2.5"
+    "async": "0.2.5",
+    "spas-http": "0.1.x"
   },
   "main": "./api.js",
   "engines": {
