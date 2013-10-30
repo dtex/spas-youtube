@@ -24,7 +24,6 @@ exports["custom"] = {
 		params.url = "http://gdata.youtube.com/feeds/api/videos?v=2";
 		// Ensure we have a number to perform calculation.
 		var maxResults = parseInt(params['max-results']) || 50;
-		if (maxResults > 50) params['max-results'] = "50";
 		var pages = Math.floor((maxResults-1)/50) + 1;
 		var startIndices = [];
 		// Prep an array for starting indices to use with `async.concat`
@@ -35,7 +34,8 @@ exports["custom"] = {
 
 		async.concat(startIndices, function (startIndex, callback) {
 			var shadowed = _.clone(params);
-			shadowed['start-index'] = startIndex+'';
+			shadowed['max-results'] = maxResults >= 50 ? '50' : maxResults.toString(10);
+			shadowed['start-index'] = startIndex.toString(10);
 
 			spashttp.request(shadowed, credentials, function ( err, videos ) {
 				if (_.has(videos, 'feed')) {
