@@ -38,7 +38,7 @@ exports["custom"] = {
 			shadowed['start-index'] = startIndex.toString(10);
 
 			spashttp.request(shadowed, credentials, function ( err, videos ) {
-				if (_.has(videos, 'feed')) {
+				if (_.has(videos, 'feed') && _.has(videos.feed, 'entry')) {
 					// Save meta data outside.
 					if (!data) data = videos;
 
@@ -47,7 +47,7 @@ exports["custom"] = {
 					});
 					
 				} else {
-					callback( err, videos );
+					callback( err, [] );
 				}
 				
 			});
