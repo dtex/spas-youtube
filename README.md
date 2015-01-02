@@ -3,9 +3,9 @@ YouTube API helpers for SPAS
 
 ## Installation
 
-### Installing little-spas
+### Installing spas
 ``` bash
-$ [sudo] npm install little-spas -g
+$ [sudo] npm install spas -g
 ```
 
 ### Installing spas-youtube
@@ -13,5 +13,5 @@ $ [sudo] npm install little-spas -g
 $ [sudo] npm install spas-youtube
 ```
 
-## Documentation 
+## Documentation
 spas-flickr documentation can be found in the github repository http://dtex.github.com/spas-youtube
