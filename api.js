@@ -23,9 +23,6 @@ var getVideoDetails = function (credentials) {
 exports["custom"] = { 
   videosWithKeywords: function(params, credentials, cb) { 
     'use strict';
-    /* Clone the params to avoid messing with the API data */
-    params = JSON.parse(JSON.stringify(params || {}));
-    
     params.url = "http://gdata.youtube.com/feeds/api/videos?v=2";
     // Ensure we have a number to perform calculation.
     var maxResults = parseInt(params['max-results']) || 50;
@@ -94,6 +91,8 @@ exports["custom"] = {
  */
 function uploadedVideo(params, credentials, cb) {
   'use strict';
+  /* Clone the params to avoid messing with the API data */
+  params = _.clone(params);
   var BASE_API = "https://www.googleapis.com/youtube/v3",
       limit = params.maxResults || 0;
   
