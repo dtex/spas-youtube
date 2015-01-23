@@ -91,6 +91,8 @@ exports["custom"] = {
  */
 function uploadedVideo(params, credentials, cb) {
   'use strict';
+  /* Clone the params to avoid messing with the API data */
+  params = _.clone(params);
   var BASE_API = "https://www.googleapis.com/youtube/v3",
       limit = params.maxResults || 0;
   
