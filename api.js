@@ -104,9 +104,9 @@ function uploadedVideo(params, credentials, cb) {
   params.part || (params.part = "snippet");
 
   spashttp.request(params, credentials, function (err, playlistResult) {
-		if (err || !playlistResult.items) {
-			return cb(err, playlistResult);
-		}
+    if (err || !playlistResult.items) {
+      return cb(err, playlistResult);
+    }
 
     var items = playlistResult.items;
 
@@ -115,7 +115,7 @@ function uploadedVideo(params, credentials, cb) {
       var videoParams = {
         url: BASE_API + "/videos",
         id: item.snippet.resourceId.videoId,
-				part: params.part
+        part: params.part
       };
       credentials.access_token && (videoParams.access_token = credentials.access_token);
 
