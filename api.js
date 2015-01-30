@@ -1,12 +1,14 @@
+/*jshint node:true,expr:true*/
+'use strict';
+
 var spashttp = require("spas-http"),
   _ = require("underscore")._,
   async = require("async");
 
 var getVideoDetails = function (credentials) {
-  'use strict';
   // If this bundle is using oauth2, add in the access token
-  var tokenString = _.isObject(credentials) && _.has(credentials, 'access_token') ? 
-    "&access_token=" + credentials.access_token : 
+  var tokenString = _.isObject(credentials) && _.has(credentials, 'access_token') ?
+    "&access_token=" + credentials.access_token :
     '';
   return function (obj, cb) {
     spashttp.request({url: "http://gdata.youtube.com/feeds/api/videos/" + obj.media$group.yt$videoid.$t + '?v=2&alt=json' + tokenString }, credentials, function( err, video ) {
@@ -17,19 +19,18 @@ var getVideoDetails = function (credentials) {
 
       cb(err);
     });
-  }
+  };
 };
-  
-exports["custom"] = { 
-  videosWithKeywords: function(params, credentials, cb) { 
-    'use strict';
+
+exports.custom = {
+  videosWithKeywords: function(params, credentials, cb) {
     params.url = "http://gdata.youtube.com/feeds/api/videos?v=2";
     // Ensure we have a number to perform calculation.
     var maxResults = parseInt(params['max-results']) || 50;
     var pages = Math.floor((maxResults-1)/50) + 1;
     var startIndices = [];
     // Prep an array for starting indices to use with `async.concat`
-    for (var i = 0; i < pages; i++) { startIndices[i] = i*50 + 1; };
+    for (var i = 0; i < pages; i++) { startIndices[i] = i*50 + 1; }
 
     // In order to concat the video entries only
     var data;
@@ -47,19 +48,17 @@ exports["custom"] = {
           async.each(videos.feed.entry, getVideoDetails(credentials), function (err) {
             callback(err, videos.feed.entry);
           });
-          
+
         } else {
           callback( err, [] );
         }
-        
+
       });
     }, function(err, results) {
       // After concatenation is done, save the entries back and return.
       data.feed.entry = results;
       cb(err, data);
     });
-    
-    
   }
 };
 
@@ -71,10 +70,10 @@ exports["custom"] = {
  * @param {Number} [maxResults] - how many to pull if set. Otherwise,
  *        pull all videos.
  *
- * The function requests `uploads` playlist recursively until there  
+ * The function requests `uploads` playlist recursively until there
  * is no `.nextPageToken` in the response. The `params.maxResults`
  * will be recalculated to see if next request is needed.
- 
+
  * When `params.maxResults` is set to less than 50, first request
  * returns the exact amount specified, and function terminates.
  *
@@ -90,37 +89,36 @@ exports["custom"] = {
  * so there won't be next call, fulfill the set.
  */
 function uploadedVideo(params, credentials, cb) {
-  'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
   var BASE_API = "https://www.googleapis.com/youtube/v3",
       limit = params.maxResults || 0;
-  
+
   // No limit, caps at 50.
   limit || (params.maxResults = 50);
   // User specified a limit that is greater than 50, also cap at 50.
   limit && limit > 50 && (params.maxResults = 50);
-  
+
   params.url = BASE_API + "/playlistItems";
   // Retrived from playlist.list for uploads playlist.
   params.part || (params.part = "snippet");
-  
+
   spashttp.request(params, credentials, function (err, playlistResult) {
     if (err) {
       return cb(err, playlistResult);
     }
-    
+
     var items = playlistResult.items;
-    
+
     async.map(items, function(item, callback) {
       // Extra request per item to get the tags
       var videoParams = {
         url: BASE_API + "/videos",
         id: item.snippet.resourceId.videoId,
         part: "snippet"
-      }
+      };
       credentials.access_token && (videoParams.access_token = credentials.access_token);
-      
+
       spashttp.request(videoParams, credentials, function(err, result) {
         callback(err, result && result.items && result.items[0]);
       });
@@ -150,6 +148,6 @@ function uploadedVideo(params, credentials, cb) {
   });
 }
 
-exports["v3"] = {
+exports.v3 = {
   videosWithKeywords: uploadedVideo
-}
+};
