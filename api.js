@@ -17,10 +17,10 @@ var getVideoDetails = function (credentials) {
 
       cb(err);
     });
-  }
+  };
 };
   
-exports["custom"] = { 
+exports.custom = { 
   videosWithKeywords: function(params, credentials, cb) { 
     'use strict';
     params.url = "http://gdata.youtube.com/feeds/api/videos?v=2";
@@ -63,15 +63,17 @@ exports["custom"] = {
   }
 };
 
+var BASE_V3_API = "https://www.googleapis.com/youtube/v3";
+
 /**
- * Recursively retrieves uploaded video with tags
+ * Recursively retrieves videos from a playlist
  *
- * @param {string} playlistId - The ID of the `uploads` playlist.
+ * @param {string} playlistId - The ID of the playlist.
  * @param {string} [part=snippet] - comma-separated list of data to retrieve.
  * @param {Number} [maxResults] - how many to pull if set. Otherwise,
  *        pull all videos.
  *
- * The function requests `uploads` playlist recursively until there  
+ * The function requests items in playlist recursively until there  
  * is no `.nextPageToken` in the response. The `params.maxResults`
  * will be recalculated to see if next request is needed.
  
@@ -89,67 +91,80 @@ exports["custom"] = {
  * call for `totalResults % 50`, there won't be `.nextPageToken`,
  * so there won't be next call, fulfill the set.
  */
-function uploadedVideo(params, credentials, cb) {
+function playlistItems(params, credentials, cb) {
   'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
-  var BASE_API = "https://www.googleapis.com/youtube/v3",
-      limit = params.maxResults || 0;
+  var limit = params.maxResults || 0;
+
+  if (!limit) {
+    // No limit, caps at 50.
+    params.maxResults = 50;
+  }
+  if (limit && limit > 50) {
+    // User specified a limit that is greater than 50, also cap at 50.
+    params.maxResults = 50;
+  }
   
-  // No limit, caps at 50.
-  limit || (params.maxResults = 50);
-  // User specified a limit that is greater than 50, also cap at 50.
-  limit && limit > 50 && (params.maxResults = 50);
-  
-  params.url = BASE_API + "/playlistItems";
-  // Retrived from playlist.list for uploads playlist.
-  params.part || (params.part = "snippet");
-  
+  params.url = BASE_V3_API + "/playlistItems";
+  if (!params.part) {
+    // Retrived from playlist.list for uploads playlist.
+    params.part = "snippet";
+  }
+
   spashttp.request(params, credentials, function (err, playlistResult) {
     if (err) {
       return cb(err, playlistResult);
     }
     
     var items = playlistResult.items;
-    
-    async.map(items, function(item, callback) {
-      // Extra request per item to get the tags
-      var videoParams = {
-        url: BASE_API + "/videos",
-        id: item.snippet.resourceId.videoId,
-        part: "snippet"
-      }
-      credentials.access_token && (videoParams.access_token = credentials.access_token);
-      
-      spashttp.request(videoParams, credentials, function(err, result) {
-        callback(err, result && result.items && result.items[0]);
+
+    if (limit !== items.length && playlistResult.nextPageToken) {
+      // API returns a token for next page, we use it to go to the next one.
+      // Also, only when we haven't gotten the exact amount of items needed.
+      params.pageToken = playlistResult.nextPageToken;
+      var remainings = limit - items.length;
+      // Remainings will be gt than 0, except when limit is 0, because
+      // this clause only happens when there is next page, meaning either
+      // limit was set to 0 or gt 50.
+      params.maxResults = remainings > 0? remainings : 0;
+      // Recursively call the next results page, appending to the items.
+      playlistItems(params, credentials, function(err, nextPageItems) {
+        Array.prototype.push.apply(items, nextPageItems);
+        cb(err, items);
       });
-    }, function(err, fullItems) {
-      // Store it back to the first request's result.
-      items = playlistResult.items = fullItems;
-      // All items now have tags.
-      if (limit !== items.length && playlistResult.nextPageToken) {
-        // API returns a token for next page, we use it to go to the next one.
-        // Also, only when we haven't gotten the exact amount of items needed.
-        params.pageToken = playlistResult.nextPageToken;
-        var remainings = limit - items.length;
-        // Remainings will be gt than 0, except when limit is 0, because
-        // this clause only happens when there is next page, meaning either
-        // limit was set to 0 or gt 50.
-        params.maxResults = remainings > 0? remainings : 0;
-        // Recursively call the next results page, appending to the items.
-        uploadedVideo(params, credentials, function(err, nextPageResult) {
-          Array.prototype.push.apply(items, nextPageResult.items);
-          cb(err, playlistResult);
-        });
-      } else {
-        // Base case, no more results, bail out.
-        cb(err, playlistResult);
-      }
-    });
+    } else {
+      // Base case, no more results, bail out.
+      cb(err, items);
+    }
   });
 }
 
-exports["v3"] = {
-  videosWithKeywords: uploadedVideo
+function playlistItemsWithTags(params, credentials, cb) {
+  'use strict';
+  function getVideoDetails(item, callback) {
+    // Extra request per item to get the tags
+    var videoParams = {
+      url: BASE_V3_API + "/videos",
+      id: item.snippet.resourceId.videoId,
+      part: params.part || "snippet"
+    };
+
+    if (credentials.access_token) {
+      videoParams.access_token = credentials.access_token;
+    }
+
+    spashttp.request(videoParams, credentials, function(err, result) {
+      callback(err, result && result.items && result.items[0]);
+    });
+  }
+
+  playlistItems(params, credentials, function(err, items) {
+    async.map(items, getVideoDetails, cb);
+  });
 }
+
+exports.v3 = {
+  playlistItems: playlistItems,
+  playlistItemsWithTags: playlistItemsWithTags
+};
