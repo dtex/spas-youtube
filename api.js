@@ -95,6 +95,31 @@ function playlistItems(params, credentials, cb) {
   'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
+  
+  if (!params.playlistId) {
+    // Retrived from channels.list for uploads playlist.
+    var channelsParams = {
+      url: BASE_V3_API + "/channels",
+      mine: true,
+      part: "contentDetails"
+    };
+
+    if (credentials.access_token) {
+      channelsParams.access_token = credentials.access_token;
+    }
+
+    return spashttp.request(channelsParams, credentials, function (err, channelsResult) {
+      if (err) {
+        return cb(err, channelsResult);
+      }
+      if (channelsResult.error && channelsResult.code !== 200) {
+        return cb(new Error(channelsResult.message), null);
+      }
+      params.playlistId = channelsResult.items[0].contentDetails.relatedPlaylists.uploads;
+      return playlistItems(params, credentials, cb);
+    });
+  }
+  
   var limit = params.maxResults || 0;
 
   if (!limit) {
