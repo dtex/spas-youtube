@@ -111,6 +111,10 @@ function playlistItems(params, credentials, cb) {
     // Retrived from playlist.list for uploads playlist.
     params.part = "snippet";
   }
+  
+  if (credentials.access_token) {
+    params.access_token = credentials.access_token;
+  }
 
   spashttp.request(params, credentials, function (err, playlistResult) {
     if (err) {
