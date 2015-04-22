@@ -117,7 +117,11 @@ function playlistItems(params, credentials, cb) {
       return cb(err, playlistResult);
     }
     
-    var items = playlistResult.items;
+    var items = playlistResult.items.map(function (item) {
+      // We only need the snippet and the video's ID, which is nested inside.
+      item.snippet.id = item.snippet.resourceId.videoId;
+      return item.snippet;
+    });
 
     if (limit !== items.length && playlistResult.nextPageToken) {
       // API returns a token for next page, we use it to go to the next one.
@@ -129,7 +133,7 @@ function playlistItems(params, credentials, cb) {
       // limit was set to 0 or gt 50.
       params.maxResults = remainings > 0? remainings : 0;
       // Recursively call the next results page, appending to the items.
-      playlistItems(params, credentials, function(err, nextPageItems) {
+      playlistItems(params, credentials, function (err, nextPageItems) {
         Array.prototype.push.apply(items, nextPageItems);
         cb(err, items);
       });
@@ -146,7 +150,7 @@ function playlistItemsWithTags(params, credentials, cb) {
     // Extra request per item to get the tags
     var videoParams = {
       url: BASE_V3_API + "/videos",
-      id: item.snippet.resourceId.videoId,
+      id: item.id,
       part: params.part || "snippet"
     };
 
@@ -155,7 +159,18 @@ function playlistItemsWithTags(params, credentials, cb) {
     }
 
     spashttp.request(videoParams, credentials, function(err, result) {
-      callback(err, result && result.items && result.items[0]);
+      if (err) {
+        return callback(err);
+      }
+      
+      var data = result && result.items && result.items[0] && result.items[0].snippet;
+      if (data) {
+        item.tags = data.snippet.tags;
+      } else {
+        item.tags = [];
+      }
+      
+      callback(err, item);
     });
   }
 
