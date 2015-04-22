@@ -121,6 +121,10 @@ function playlistItems(params, credentials, cb) {
       return cb(err, playlistResult);
     }
     
+    if (playlistResult.error && playlistResult.code !== 200) {
+      return cb(new Error(playlistResult.message), null);
+    }
+    
     var items = playlistResult.items.map(function (item) {
       // We only need the snippet and the video's ID, which is nested inside.
       item.snippet.id = item.snippet.resourceId.videoId;
@@ -138,6 +142,10 @@ function playlistItems(params, credentials, cb) {
       params.maxResults = remainings > 0? remainings : 0;
       // Recursively call the next results page, appending to the items.
       playlistItems(params, credentials, function (err, nextPageItems) {
+        if (err) {
+          return cb(err);
+        }
+        
         Array.prototype.push.apply(items, nextPageItems);
         cb(err, items);
       });
