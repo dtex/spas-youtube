@@ -65,6 +65,35 @@ exports.custom = {
 
 var BASE_V3_API = "https://www.googleapis.com/youtube/v3";
 
+function channels(params, credentials, cb) {
+  'use strict';
+  /* Clone the params to avoid messing with the API data */
+  params = _.clone(params);
+
+  params.url = BASE_V3_API + "/channels";
+  params.mine = true;
+
+  if (!params.part) {
+    params.part = "contentDetails";
+  }
+
+  if (credentials.access_token) {
+    params.access_token = credentials.access_token;
+  }
+
+  return spashttp.request(params, credentials, function (err, channelsResult) {
+    if (err) {
+      return cb(err, channelsResult);
+    }
+
+    if (channelsResult.error && channelsResult.code !== 200) {
+      return cb(new Error(channelsResult.message), null);
+    }
+
+    cb(null, channelsResult.items[0][params.part]);
+  });
+}
+
 /**
  * Recursively retrieves videos from a playlist
  *
@@ -98,24 +127,12 @@ function playlistItems(params, credentials, cb) {
   
   if (!params.playlistId) {
     // Retrived from channels.list for uploads playlist.
-    var channelsParams = {
-      url: BASE_V3_API + "/channels",
-      mine: true,
-      part: "contentDetails"
-    };
-
-    if (credentials.access_token) {
-      channelsParams.access_token = credentials.access_token;
-    }
-
-    return spashttp.request(channelsParams, credentials, function (err, channelsResult) {
+    return channels({part: "contentDetails"}, credentials, function (err, contentDetails) {
       if (err) {
-        return cb(err, channelsResult);
+        return cb(err);
       }
-      if (channelsResult.error && channelsResult.code !== 200) {
-        return cb(new Error(channelsResult.message), null);
-      }
-      params.playlistId = channelsResult.items[0].contentDetails.relatedPlaylists.uploads;
+      
+      params.playlistId = contentDetails.relatedPlaylists.uploads;
       return playlistItems(params, credentials, cb);
     });
   }
@@ -217,6 +234,7 @@ function playlistItemsWithTags(params, credentials, cb) {
 }
 
 exports.v3 = {
+  channels: channels,
   playlistItems: playlistItems,
   playlistItemsWithTags: playlistItemsWithTags
 };
