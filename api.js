@@ -131,7 +131,7 @@ function playlistItems(params, credentials, cb) {
       if (err) {
         return cb(err);
       }
-      
+
       params.playlistId = contentDetails.relatedPlaylists.uploads;
       return playlistItems(params, credentials, cb);
     });
@@ -168,9 +168,9 @@ function playlistItems(params, credentials, cb) {
     }
     
     var items = playlistResult.items.map(function (item) {
-      // We only need the snippet and the video's ID, which is nested inside.
+      // We need the video's ID, which is nested inside.
       item.snippet.id = item.snippet.resourceId.videoId;
-      return item.snippet;
+      return item;
     });
 
     if (limit !== items.length && playlistResult.nextPageToken) {
@@ -204,7 +204,7 @@ function playlistItemsWithTags(params, credentials, cb) {
     // Extra request per item to get the tags
     var videoParams = {
       url: BASE_V3_API + "/videos",
-      id: item.id,
+      id: item.snippet.id,
       part: params.part || "snippet"
     };
 
@@ -219,9 +219,9 @@ function playlistItemsWithTags(params, credentials, cb) {
       
       var data = result && result.items && result.items[0] && result.items[0].snippet;
       if (data) {
-        item.tags = data.snippet.tags;
+        item.snippet.tags = data.tags;
       } else {
-        item.tags = [];
+        item.snippet.tags = [];
       }
       
       callback(err, item);
