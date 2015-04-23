@@ -77,7 +77,7 @@ function channels(params, credentials, cb) {
     params.part = "contentDetails";
   }
 
-  if (credentials.access_token) {
+  if (credentials && credentials.access_token) {
     params.access_token = credentials.access_token;
   }
 
@@ -154,7 +154,7 @@ function playlistItems(params, credentials, cb) {
     params.part = "snippet";
   }
   
-  if (credentials.access_token) {
+  if (credentials && credentials.access_token) {
     params.access_token = credentials.access_token;
   }
 
@@ -208,7 +208,7 @@ function playlistItemsWithTags(params, credentials, cb) {
       part: params.part || "snippet"
     };
 
-    if (credentials.access_token) {
+    if (credentials && credentials.access_token) {
       videoParams.access_token = credentials.access_token;
     }
 
