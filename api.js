@@ -71,7 +71,9 @@ function channels(params, credentials, cb) {
   params = _.clone(params);
 
   params.url = BASE_V3_API + "/channels";
-  params.mine = true;
+  if (!params.forUsername) {
+    params.mine = true;
+  }
 
   if (!params.part) {
     params.part = "contentDetails";
@@ -127,7 +129,11 @@ function playlistItems(params, credentials, cb) {
   
   if (!params.playlistId) {
     // Retrived from channels.list for uploads playlist.
-    return channels({part: "contentDetails"}, credentials, function (err, contentDetails) {
+    var channelsParams = {
+      part: "contentDetails", 
+      forUsername: params.author
+    }
+    return channels(channelsParams, credentials, function (err, contentDetails) {
       if (err) {
         return cb(err);
       }
