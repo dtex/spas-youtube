@@ -229,6 +229,9 @@ function playlistItemsWithTags(params, credentials, cb) {
   }
 
   playlistItems(params, credentials, function(err, items) {
+    if (err) {
+      return cb(err);
+    }
     async.map(items, getVideoDetails, cb);
   });
 }
