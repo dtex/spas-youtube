@@ -88,8 +88,8 @@ function channels(params, credentials, cb) {
       return cb(err, channelsResult);
     }
 
-    if (channelsResult.error && channelsResult.code !== 200) {
-      return cb(new Error(channelsResult.message), null);
+    if (channelsResult.error) {
+      return cb(channelsResult.error), null);
     }
 
     cb(null, channelsResult.items[0][params.part]);
@@ -169,8 +169,8 @@ function playlistItems(params, credentials, cb) {
       return cb(err, playlistResult);
     }
     
-    if (playlistResult.error && playlistResult.code !== 200) {
-      return cb(new Error(playlistResult.message), null);
+    if (playlistResult.error) {
+      return cb(playlistResult.error, null);
     }
     
     var items = playlistResult.items.map(function (item) {
