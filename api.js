@@ -89,7 +89,7 @@ function channels(params, credentials, cb) {
     }
 
     if (channelsResult.error) {
-      return cb(channelsResult.error), null);
+      return cb(channelsResult.error, null);
     }
 
     cb(null, channelsResult.items[0][params.part]);
@@ -130,8 +130,9 @@ function playlistItems(params, credentials, cb) {
   if (!params.playlistId) {
     // Retrived from channels.list for uploads playlist.
     var channelsParams = {
-      part: "contentDetails", 
-      forUsername: params.author
+      part: "contentDetails",
+      forUsername: params.author,
+      key: params.key
     }
     return channels(channelsParams, credentials, function (err, contentDetails) {
       if (err) {
@@ -211,7 +212,8 @@ function playlistItemsWithTags(params, credentials, cb) {
     var videoParams = {
       url: BASE_V3_API + "/videos",
       id: item.snippet.id,
-      part: params.part || "snippet"
+      part: params.part || "snippet",
+      key: params.key
     };
 
     if (credentials && credentials.access_token) {
