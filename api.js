@@ -84,12 +84,9 @@ function channels(params, credentials, cb) {
   }
 
   return spashttp.request(params, credentials, function (err, channelsResult) {
-    if (err) {
-      return cb(err, channelsResult);
-    }
-
-    if (channelsResult.error) {
-      return cb(channelsResult.error, null);
+    if (err || channelsResult.error) {
+      // YouTube API returns the error in the response.
+      return cb(err || channelsResult.error);
     }
 
     cb(null, channelsResult.items[0][params.part]);
@@ -99,7 +96,7 @@ function channels(params, credentials, cb) {
 /**
  * Recursively retrieves videos from a playlist
  *
- * @param {string} playlistId - The ID of the playlist.
+ * @param {string} playlistId - The ID of the playlist (default to uploads).
  * @param {string} [part=snippet] - comma-separated list of data to retrieve.
  * @param {Number} [maxResults] - how many to pull if set. Otherwise,
  *        pull all videos.
@@ -166,12 +163,9 @@ function playlistItems(params, credentials, cb) {
   }
 
   spashttp.request(params, credentials, function (err, playlistResult) {
-    if (err) {
-      return cb(err, playlistResult);
-    }
-    
-    if (playlistResult.error) {
-      return cb(playlistResult.error, null);
+    // YouTube API returns the error in the response.
+    if (err || playlistResult.error) {
+      return cb(err || playlistResult.error);
     }
     
     var items = playlistResult.items.map(function (item) {
@@ -205,46 +199,99 @@ function playlistItems(params, credentials, cb) {
   });
 }
 
-function playlistItemsWithTags(params, credentials, cb) {
+/**
+ * Recursively retrieves videos from a list of IDs
+ *
+ * @param {array} id - The list of video IDs to retrieve.
+ * @param {string} [part=snippet] - comma-separated list of data to retrieve.
+ *
+ * The function requests videos with details from `/videos` endpoint
+ * It splits the `params.id` array into chunk of 50 and recursively
+ * makes requests.
+ *
+ * The total number of requests is `params.id.length` div 50.
+ */
+function videos(params, credentials, cb) {
   'use strict';
-  function getVideoDetails(item, callback) {
-    // Extra request per item to get the tags
-    var videoParams = {
-      url: BASE_V3_API + "/videos",
-      id: item.snippet.id,
-      part: params.part || "snippet",
-      key: params.key
-    };
+  /* Clone the params to avoid messing with the API data */
+  params = _.clone(params);
 
-    if (credentials && credentials.access_token) {
-      videoParams.access_token = credentials.access_token;
-    }
+  params.url = BASE_V3_API + "/videos";
 
-    spashttp.request(videoParams, credentials, function(err, result) {
-      if (err) {
-        return callback(err);
-      }
-      
-      var data = result && result.items && result.items[0] && result.items[0].snippet;
-      if (data) {
-        item.snippet.tags = data.tags;
-      } else {
-        item.snippet.tags = [];
-      }
-      
-      callback(err, item);
-    });
+  if (!params.part) {
+    params.part = "snippet";
   }
 
-  playlistItems(params, credentials, function(err, items) {
+  if (credentials && credentials.access_token) {
+    params.access_token = credentials.access_token;
+  }
+
+  // Remove the first 50 IDs (due to YouTube's restriction)
+  // After spliced, params.id has the first 50.
+  var ids = params.id;
+  var restIds = ids.splice(50, ids.length);
+  params.id = ids.join(",");
+
+  spashttp.request(params, credentials, function (err, result) {
+    if (err || result.error) {
+      return cb(err || result.error);
+    }
+
+    var items = result.items;
+
+    if (restIds.length > 0) {
+      params.id = restIds;
+      // Still needs more, recursively call this again and merge results
+      videos(params, credentials, function (err, nextItems) {
+        if (err) {
+          return cb(err);
+        }
+        Array.prototype.push.apply(items, nextItems);
+        cb(err, items);
+      });
+    } else {
+      cb(err, result.items);
+    }
+  });
+}
+
+/**
+ * Get detail videos in a playlist
+ *
+ * @param {string} playlistId - The ID of the playlist (default to `uploads`).
+ * @param {string} [part=snippet] - comma-separated list of data to retrieve.
+ * @param {Number} [maxResults] - how many to pull if set. Otherwise,
+ *        pull all videos.
+ *
+ * The name of the function is misleading. It does not only pull tags, but
+ * also all details of the videos (depending on `params.part` of course).
+ * The name is for legacy reason.
+ *
+ * The maximum number of requests for a N item playlist:
+ * (N div 50) + (N div 50).
+ */
+function playlistItemsWithTags(params, credentials, cb) {
+  'use strict';
+  playlistItems(params, credentials, function (err, items) {
     if (err) {
       return cb(err);
     }
-    async.map(items, getVideoDetails, cb);
+    var ids = items.map(function (item) {
+      return item.snippet.id;
+    });
+
+    var videoParams = {
+      id: ids,
+      key: params.key,
+      part: params.part || "snippet"
+    }
+
+    videos(videoParams, credentials, cb);
   });
 }
 
 exports.v3 = {
+  videos: videos,
   channels: channels,
   playlistItems: playlistItems,
   playlistItemsWithTags: playlistItemsWithTags
