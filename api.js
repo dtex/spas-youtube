@@ -94,6 +94,40 @@ function channels(params, credentials, cb) {
 }
 
 /**
+ * Retrieves a list of playlists in a channel
+ *
+ * @param {string} channelId - ID of the user's channel
+ * @param {string} [part=snippet] - comma-separated list of data to retrieve
+ * @param {Number} [maxResults] - how many to pull if set.
+ *
+ * For now, `channelId` is required. By using `v3.channels`, this ID can be
+ * acquired in the `id` property.
+ */
+function playlists(params, credentials, cb) {
+  'use strict';
+  /* Clone the params to avoid messing with the API data */
+  params = _.clone(params);
+
+  params.url = BASE_V3_API + "/playlists";
+  if (!params.part) {
+    params.part = "snippet";
+  }
+
+  if (credentials && credentials.access_token) {
+    params.access_token = credentials.access_token;
+  }
+
+  spashttp.request(params, credentials, function (err, playlistsResult) {
+    // YouTube API returns the error in the response.
+    if (err || playlistsResult.error) {
+      return cb(err || playlistsResult.error);
+    }
+
+    cb(null, playlistsResult.items);
+  });
+}
+
+/**
  * Recursively retrieves videos from a playlist
  *
  * @param {string} playlistId - The ID of the playlist (default to uploads).
@@ -293,6 +327,7 @@ function playlistItemsWithTags(params, credentials, cb) {
 exports.v3 = {
   videos: videos,
   channels: channels,
+  playlists: playlists,
   playlistItems: playlistItems,
   playlistItemsWithTags: playlistItemsWithTags
 };
