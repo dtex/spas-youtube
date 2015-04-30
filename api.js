@@ -65,6 +65,79 @@ exports.custom = {
 
 var BASE_V3_API = "https://www.googleapis.com/youtube/v3";
 
+/**
+ * Recursively retrieves items from an API endpoint
+ *
+ * @param {Number} [maxResults] - how many to pull if set. Otherwise,
+ *        pull all items.
+ *
+ * Requests items from an API endpoint recursively until there is no
+ * `.nextPageToken` in the response. The `params.maxResults` will be
+ * recalculated to see if next request is needed.
+ 
+ * When `params.maxResults` is set to less than 50, first request
+ * returns the exact amount specified, and function terminates.
+ *
+ * Now, if it is set to greater than 50, the first request is capped
+ * at 50 (due to API's limit). The response will contain the next
+ * page token if the total results are more than 50. Substracting
+ * the different between acquired items and `params.maxResults`
+ * will give the next `params.maxResults` to query.
+ *
+ * Another extreme case is `params.maxResults` set to really high,
+ * way over the total results. In this case, at the last recursive
+ * call for `totalResults % 50`, there won't be `.nextPageToken`,
+ * so there won't be next call, fulfill the set.
+ */
+function requestUntil(params, credentials, cb) {
+  'use strict';
+  /* Clone the params to avoid messing with the API data */
+  params = _.clone(params);
+
+  var limit = params.maxResults || 0;
+
+  if (!limit) {
+    // No limit, caps at 50.
+    params.maxResults = 50;
+  }
+  if (limit && limit > 50) {
+    // User specified a limit that is greater than 50, also cap at 50.
+    params.maxResults = 50;
+  }
+
+  spashttp.request(params, credentials, function (err, result) {
+    // YouTube API returns the error in the response.
+    if (err || result.error) {
+      return cb(err || result.error);
+    }
+
+    var items = result.items;
+
+    if (limit !== items.length && result.nextPageToken) {
+      // API returns a token for next page, we use it to go to the next one.
+      // Also, only when we haven't gotten the exact amount of items needed.
+      params.pageToken = result.nextPageToken;
+      var remainings = limit - items.length;
+      // Remainings will be gt than 0, except when limit is 0, because
+      // this clause only happens when there is next page, meaning either
+      // limit was set to 0 or gt 50.
+      params.maxResults = remainings > 0? remainings : 0;
+      // Recursively call the next results page, appending to the items.
+      requestUntil(params, credentials, function(err, nextPageItems) {
+        if (err) {
+          return cb(err);
+        }
+        
+        Array.prototype.push.apply(items, nextPageItems);
+        cb(null, items);
+      });
+    } else {
+      // Base case, no more results, bail out.
+      cb(null, items);
+    }
+  });
+}
+
 function channels(params, credentials, cb) {
   'use strict';
   /* Clone the params to avoid messing with the API data */
@@ -135,23 +208,7 @@ function playlists(params, credentials, cb) {
  * @param {Number} [maxResults] - how many to pull if set. Otherwise,
  *        pull all videos.
  *
- * The function requests items in playlist recursively until there  
- * is no `.nextPageToken` in the response. The `params.maxResults`
- * will be recalculated to see if next request is needed.
- 
- * When `params.maxResults` is set to less than 50, first request
- * returns the exact amount specified, and function terminates.
- *
- * Now, if it is set to greater than 50, the first request is capped
- * at 50 (due to API's limit). The response will contain the next
- * page token if the total results are more than 50. Substracting
- * the different between acquired items and `params.maxResults`
- * will give the next `params.maxResults` to query.
- *
- * Another extreme case is `params.maxResults` set to really high,
- * way over the total results. In this case, at the last recursive
- * call for `totalResults % 50`, there won't be `.nextPageToken`,
- * so there won't be next call, fulfill the set.
+ * Requests items in playlist recursively until `params.maxResults` or all.
  */
 function playlistItems(params, credentials, cb) {
   'use strict';
@@ -164,7 +221,7 @@ function playlistItems(params, credentials, cb) {
       part: "contentDetails",
       forUsername: params.author,
       key: params.key
-    }
+    };
     return channels(channelsParams, credentials, function (err, contentDetails) {
       if (err) {
         return cb(err);
@@ -173,17 +230,6 @@ function playlistItems(params, credentials, cb) {
       params.playlistId = contentDetails.relatedPlaylists.uploads;
       return playlistItems(params, credentials, cb);
     });
-  }
-  
-  var limit = params.maxResults || 0;
-
-  if (!limit) {
-    // No limit, caps at 50.
-    params.maxResults = 50;
-  }
-  if (limit && limit > 50) {
-    // User specified a limit that is greater than 50, also cap at 50.
-    params.maxResults = 50;
   }
   
   params.url = BASE_V3_API + "/playlistItems";
@@ -196,40 +242,18 @@ function playlistItems(params, credentials, cb) {
     params.access_token = credentials.access_token;
   }
 
-  spashttp.request(params, credentials, function (err, playlistResult) {
-    // YouTube API returns the error in the response.
-    if (err || playlistResult.error) {
-      return cb(err || playlistResult.error);
+  requestUntil(params, credentials, function (err, items) {
+    if (err) {
+      return cb(err);
     }
-    
-    var items = playlistResult.items.map(function (item) {
+
+    items = items.map(function (item) {
       // We need the video's ID, which is nested inside.
       item.snippet.id = item.snippet.resourceId.videoId;
       return item;
     });
 
-    if (limit !== items.length && playlistResult.nextPageToken) {
-      // API returns a token for next page, we use it to go to the next one.
-      // Also, only when we haven't gotten the exact amount of items needed.
-      params.pageToken = playlistResult.nextPageToken;
-      var remainings = limit - items.length;
-      // Remainings will be gt than 0, except when limit is 0, because
-      // this clause only happens when there is next page, meaning either
-      // limit was set to 0 or gt 50.
-      params.maxResults = remainings > 0? remainings : 0;
-      // Recursively call the next results page, appending to the items.
-      playlistItems(params, credentials, function (err, nextPageItems) {
-        if (err) {
-          return cb(err);
-        }
-        
-        Array.prototype.push.apply(items, nextPageItems);
-        cb(err, items);
-      });
-    } else {
-      // Base case, no more results, bail out.
-      cb(err, items);
-    }
+    cb(null, items);
   });
 }
 
@@ -318,13 +342,40 @@ function playlistItemsWithTags(params, credentials, cb) {
       id: ids,
       key: params.key,
       part: params.part || "snippet"
-    }
+    };
 
     videos(videoParams, credentials, cb);
   });
 }
 
+/**
+ * Performs a search query
+ *
+ * Supports all parameters from
+ * https://developers.google.com/youtube/v3/docs/search/list,
+ * with the exception of `maxResults`. It can be set higher
+ * than YouTube limit of 50.
+ */
+function search(params, credentials, cb) {
+  'use strict';
+  /* Clone the params to avoid messing with the API data */
+  params = _.clone(params);
+
+  params.url = BASE_V3_API + "/search";
+
+  if (!params.part) {
+    params.part = "snippet";
+  }
+
+  if (credentials && credentials.access_token) {
+    params.access_token = credentials.access_token;
+  }
+
+  requestUntil(params, credentials, cb);
+}
+
 exports.v3 = {
+  search: search,
   videos: videos,
   channels: channels,
   playlists: playlists,
