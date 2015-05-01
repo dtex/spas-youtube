@@ -190,13 +190,12 @@ function playlists(params, credentials, cb) {
     params.access_token = credentials.access_token;
   }
 
-  spashttp.request(params, credentials, function (err, playlistsResult) {
-    // YouTube API returns the error in the response.
-    if (err || playlistsResult.error) {
-      return cb(err || playlistsResult.error);
+  requestUntil(params, credentials, function (err, items) {
+    if (err) {
+      return cb(err);
     }
 
-    cb(null, playlistsResult.items);
+    cb(null, items);
   });
 }
 
