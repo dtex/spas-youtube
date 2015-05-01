@@ -1,12 +1,14 @@
+/*jshint node:true,expr:true*/
+'use strict';
+
 var spashttp = require("spas-http"),
   _ = require("underscore")._,
   async = require("async");
 
 var getVideoDetails = function (credentials) {
-  'use strict';
   // If this bundle is using oauth2, add in the access token
-  var tokenString = _.isObject(credentials) && _.has(credentials, 'access_token') ? 
-    "&access_token=" + credentials.access_token : 
+  var tokenString = _.isObject(credentials) && _.has(credentials, 'access_token') ?
+    "&access_token=" + credentials.access_token :
     '';
   return function (obj, cb) {
     spashttp.request({url: "http://gdata.youtube.com/feeds/api/videos/" + obj.media$group.yt$videoid.$t + '?v=2&alt=json' + tokenString }, credentials, function( err, video ) {
@@ -19,17 +21,16 @@ var getVideoDetails = function (credentials) {
     });
   };
 };
-  
-exports.custom = { 
-  videosWithKeywords: function(params, credentials, cb) { 
-    'use strict';
+
+exports.custom = {
+  videosWithKeywords: function(params, credentials, cb) {
     params.url = "http://gdata.youtube.com/feeds/api/videos?v=2";
     // Ensure we have a number to perform calculation.
     var maxResults = parseInt(params['max-results']) || 50;
     var pages = Math.floor((maxResults-1)/50) + 1;
     var startIndices = [];
     // Prep an array for starting indices to use with `async.concat`
-    for (var i = 0; i < pages; i++) { startIndices[i] = i*50 + 1; };
+    for (var i = 0; i < pages; i++) { startIndices[i] = i*50 + 1; }
 
     // In order to concat the video entries only
     var data;
@@ -47,19 +48,17 @@ exports.custom = {
           async.each(videos.feed.entry, getVideoDetails(credentials), function (err) {
             callback(err, videos.feed.entry);
           });
-          
+
         } else {
           callback( err, [] );
         }
-        
+
       });
     }, function(err, results) {
       // After concatenation is done, save the entries back and return.
       data.feed.entry = results;
       cb(err, data);
     });
-    
-    
   }
 };
 
@@ -74,7 +73,7 @@ var BASE_V3_API = "https://www.googleapis.com/youtube/v3";
  * Requests items from an API endpoint recursively until there is no
  * `.nextPageToken` in the response. The `params.maxResults` will be
  * recalculated to see if next request is needed.
- 
+ *
  * When `params.maxResults` is set to less than 50, first request
  * returns the exact amount specified, and function terminates.
  *
@@ -90,7 +89,6 @@ var BASE_V3_API = "https://www.googleapis.com/youtube/v3";
  * so there won't be next call, fulfill the set.
  */
 function requestUntil(params, credentials, cb) {
-  'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
 
@@ -139,7 +137,6 @@ function requestUntil(params, credentials, cb) {
 }
 
 function channels(params, credentials, cb) {
-  'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
 
@@ -177,7 +174,6 @@ function channels(params, credentials, cb) {
  * acquired in the `id` property.
  */
 function playlists(params, credentials, cb) {
-  'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
 
@@ -210,7 +206,6 @@ function playlists(params, credentials, cb) {
  * Requests items in playlist recursively until `params.maxResults` or all.
  */
 function playlistItems(params, credentials, cb) {
-  'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
   
@@ -269,7 +264,6 @@ function playlistItems(params, credentials, cb) {
  * The total number of requests is `params.id.length` div 50.
  */
 function videos(params, credentials, cb) {
-  'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
 
@@ -328,7 +322,6 @@ function videos(params, credentials, cb) {
  * (N div 50) + (N div 50).
  */
 function playlistItemsWithTags(params, credentials, cb) {
-  'use strict';
   playlistItems(params, credentials, function (err, items) {
     if (err) {
       return cb(err);
@@ -346,7 +339,6 @@ function playlistItemsWithTags(params, credentials, cb) {
     videos(videoParams, credentials, cb);
   });
 }
-
 /**
  * Performs a search query
  *
@@ -356,7 +348,6 @@ function playlistItemsWithTags(params, credentials, cb) {
  * than YouTube limit of 50.
  */
 function search(params, credentials, cb) {
-  'use strict';
   /* Clone the params to avoid messing with the API data */
   params = _.clone(params);
 
