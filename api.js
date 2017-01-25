@@ -231,6 +231,7 @@ function playlistItems(params, credentials, cb) {
     // Retrived from playlist.list for uploads playlist.
     params.part = "snippet";
   }
+  params.part = params.part.replace(/,statistics/, '');
   
   if (credentials && credentials.access_token) {
     params.access_token = credentials.access_token;
