@@ -1,7 +1,7 @@
 {
   "name": "spas-youtube",
   "description": "YouTube API helpers for SPAS",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "author": {
     "name": "Donovan Buck",
     "email": "donovan@donovan.bz",
